@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from models.user import UserCreate, UserLogin
-from models.models import User
+from models.schema import User
 from database.database import engine, SessionLocal, Base
 from fastapi import Depends, HTTPException
+from auth.token import create_jwt, verify_jwt
 
 app = FastAPI()
 
@@ -47,7 +48,11 @@ def login(user: UserLogin, db: SessionLocal = Depends(get_db)):
     if existing_user.password != user.password:
         raise HTTPException(status_code = 401, detail = "Invalid password")
     
-    return {"message": "User logged in successfully"}
+    return {"message": "User logged in successfully", "token": create_jwt(user.name)}
+    
+@app.get("/verifylogin")
+def verify_login(payload = Depends(verify_jwt)):
+    return {"message": "Token is valid", "payload": payload}
 
     
 
