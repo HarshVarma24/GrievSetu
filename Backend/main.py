@@ -7,7 +7,9 @@ from auth.token import create_jwt, verify_jwt
 
 app = FastAPI()
 
+
 def get_db():
+    
     db = SessionLocal()
     try:
         yield db
@@ -55,4 +57,3 @@ def verify_login(payload = Depends(verify_jwt)):
     return {"message": "Token is valid", "payload": payload}
 
     
-
