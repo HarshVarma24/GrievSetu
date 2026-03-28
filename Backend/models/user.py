@@ -15,3 +15,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     name: str
     password: str
+
+class GrievanceRequest(BaseModel):
+    text: str
+    

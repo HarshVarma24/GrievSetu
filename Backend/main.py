@@ -1,12 +1,13 @@
 from fastapi import FastAPI
-from models.user import UserCreate, UserLogin
+from models.user import GrievanceRequest, UserCreate, UserLogin
 from models.schema import User
 from database.database import engine, SessionLocal, Base
 from fastapi import Depends, HTTPException
 from auth.token import create_jwt, verify_jwt
+from services.process import process_grievance
 
 app = FastAPI()
-
+Base.metadata.create_all(bind=engine)
 
 def get_db():
     
@@ -56,4 +57,12 @@ def login(user: UserLogin, db: SessionLocal = Depends(get_db)):
 def verify_login(payload = Depends(verify_jwt)):
     return {"message": "Token is valid", "payload": payload}
 
+
+@app.post("/predict")
+def predict_grievance(request: GrievanceRequest):
+    result = process_grievance(request.text)
+    return {
+        "status": "success",
+        "result": result
+    }
     
