@@ -18,4 +18,5 @@ class UserLogin(BaseModel):
 
 class GrievanceRequest(BaseModel):
     text: str
+    img_path: str
     

@@ -22,11 +22,6 @@ def text_model(text):
 
     return category[0], confidence
 
-category, confidence = text_model(
-    "Broken pipelines and loose electric wires on the street are causing both safety and infrastructure issues."
-    )
-print(f"Predicted category: {category}, Confidence: {confidence:.2f}")
-
 
 
 

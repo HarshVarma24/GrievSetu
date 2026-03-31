@@ -5,8 +5,15 @@ from database.database import engine, SessionLocal, Base
 from fastapi import Depends, HTTPException
 from auth.token import create_jwt, verify_jwt
 from services.process import process_grievance
+from fastapi import UploadFile, File
+import os
+import shutil
 
 app = FastAPI()
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -60,7 +67,10 @@ def verify_login(payload = Depends(verify_jwt)):
 
 @app.post("/predict")
 def predict_grievance(request: GrievanceRequest):
-    result = process_grievance(request.text)
+    result = process_grievance(
+        text = request.text,
+        img_path=request.img_path
+    )
     return {
         "status": "success",
         "result": result
