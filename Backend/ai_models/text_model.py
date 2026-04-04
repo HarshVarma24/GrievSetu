@@ -20,8 +20,7 @@ def text_model(text):
     category = label_encoder.inverse_transform([prediction_class[0]])
     confidence = prediction[0][prediction_class[0]]
 
-    return category[0], confidence
-
+    return category[0], float(confidence)
 
 
 
