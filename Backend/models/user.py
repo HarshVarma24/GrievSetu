@@ -13,10 +13,11 @@ class UserCreate(BaseModel):
         return confirm_password
 
 class UserLogin(BaseModel):
-    name: str
+    email: EmailStr
     password: str
 
 class GrievanceRequest(BaseModel):
     text: str
     img_path: str
+    user_id: int
     

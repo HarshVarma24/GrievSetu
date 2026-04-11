@@ -3,6 +3,8 @@ from services.routing import route_grievance
 from services.priority import assign_priority
 from services.sla import assign_sla
 from ai_models.image_model import predict_image
+from database.database import SessionLocal
+from models.grievance import Grievance
 
 #NORMALIZE MAP 
 NORMALIZE_MAP = {
@@ -17,7 +19,7 @@ NORMALIZE_MAP = {
 }
 
 
-def process_grievance(text="",img_path=""):
+def process_grievance(text="",img_path="", user_id = None):
     category, text_confidence = text_model(text) if text else (None, 0)
     predicted_label, image_confidence = predict_image(img_path) if img_path else (None, 0)
 
@@ -59,6 +61,22 @@ def process_grievance(text="",img_path=""):
     priority = assign_priority(text)
     sla = assign_sla(priority)
 
+    db = SessionLocal()
+
+    new_grievance = Grievance(
+        user_id = user_id,
+        text = text,
+        category = final_category,
+        status = "pending",
+        priority = priority,
+        department = department,
+        image_path = img_path,
+    )
+
+    db.add(new_grievance)
+    db.commit()
+    db.refresh(new_grievance) # to get the id of the new grievance
+
     return {
         "input_text": text,
         "input_image": img_path,
@@ -68,3 +86,5 @@ def process_grievance(text="",img_path=""):
         "priority": priority,
         "sla": sla
    }
+
+

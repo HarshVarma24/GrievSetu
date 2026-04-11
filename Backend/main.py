@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from models.user import GrievanceRequest, UserCreate, UserLogin
+from models.grievance import Grievance
 from models.schema import User
 from database.database import engine, SessionLocal, Base
 from fastapi import Depends, HTTPException
@@ -50,7 +51,7 @@ def register(user: UserCreate, db: SessionLocal = Depends(get_db)):
     
 @app.post("/login")
 def login(user: UserLogin, db: SessionLocal = Depends(get_db)):
-    existing_user = db.query(User).filter(User.name == user.name).first()
+    existing_user = db.query(User).filter(User.email == user.email).first()
     
     if not existing_user:
         raise HTTPException(status_code = 404, detail = "User not found")
@@ -58,7 +59,11 @@ def login(user: UserLogin, db: SessionLocal = Depends(get_db)):
     if existing_user.password != user.password:
         raise HTTPException(status_code = 401, detail = "Invalid password")
     
-    return {"message": "User logged in successfully", "token": create_jwt(user.name)}
+    return {"message": "User logged in successfully", 
+            "token": create_jwt(user.email),
+            "user_id" : existing_user.id,
+            "role" : existing_user.role
+        }
     
 @app.get("/verifylogin")
 def verify_login(payload = Depends(verify_jwt)):
@@ -76,3 +81,27 @@ def predict_grievance(request: GrievanceRequest):
         "result": result
     }
     
+@app.post("/submit")
+def submit_grievance(request: GrievanceRequest):
+    result = process_grievance(
+        text = request.text,
+        img_path = request.img_path,
+        user_id = request.user_id
+    )
+    print("USER_ID :", request.user_id)
+    return result
+
+@app.get("/my_grievances/{user_id}")
+def my_grievances(user_id: int, db: SessionLocal = Depends(get_db)):
+    data = db.query(Grievance).filter(Grievance.user_id == user_id).all()
+    return [
+        {
+            "id": grievance.id,
+            "text": grievance.text,
+            "category": grievance.category,
+            "status": grievance.status,
+            "priority": grievance.priority,
+            "created_at": grievance.created_at
+        }
+        for grievance in data
+    ]

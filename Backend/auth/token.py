@@ -9,11 +9,11 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-def create_jwt(name: str):
+def create_jwt(email: str):
     expire = datetime.now(timezone.utc) + timedelta(minutes=30)
 
     payload = {
-        "name":name,
+        "email":email,
         "exp": expire
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
