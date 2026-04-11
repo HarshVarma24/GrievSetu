@@ -9,6 +9,8 @@ from services.process import process_grievance
 from fastapi import UploadFile, File
 import os
 import shutil
+from sqlalchemy import func
+
 
 app = FastAPI()
 
@@ -104,4 +106,43 @@ def my_grievances(user_id: int, db: SessionLocal = Depends(get_db)):
             "created_at": grievance.created_at
         }
         for grievance in data
+    ]
+
+@app.get("/dashboard/{user_id}")
+def dashboard(user_id: int, db: SessionLocal = Depends(get_db)):
+
+    total = db.query(Grievance).filter(Grievance.user_id == user_id).count()
+    pending = db.query(Grievance).filter(Grievance.user_id == user_id, Grievance.status == "pending").count()
+    resolved = db.query(Grievance).filter(Grievance.user_id == user_id, Grievance.status == "resolved").count()
+    in_progress = db.query(Grievance).filter(Grievance.user_id == user_id, Grievance.status == "in_progress").count()
+
+    return {
+        "total": total,
+        "pending": pending,
+        "resolved": resolved,
+        "in_progress": in_progress
+    }
+
+@app.get("/recent/{user_id}")
+def recent(user_id: int, db: SessionLocal = Depends(get_db)):
+    data = db.query(Grievance).filter(Grievance.user_id == user_id).order_by(Grievance.created_at.desc()).limit(5).all()
+    return [
+        {
+            "id": grievance.id,
+            "text": grievance.text,
+            "category": grievance.category,
+            "status": grievance.status,
+        }
+        for grievance in data
+    ]
+
+@app.get("/report/{user_id}")
+def report(user_id: int, db: SessionLocal = Depends(get_db)):
+    data = db.query(func.date(Grievance.created_at),func.count()).filter(Grievance.user_id == user_id).group_by(func.date(Grievance.created_at)).all()
+    return [
+        {
+            "date": date,
+            "count": count
+        }
+        for date, count in data
     ]
