@@ -30,6 +30,14 @@ def get_db():
 @app.get("/")
 def test():
     return {"message": "Hello World"}
+
+def admin_required(payload = Depends(verify_jwt), db: SessionLocal= Depends(get_db)):
+    user = db.query(User).filter(User.email == payload["sub"]).first()
+    
+    if not user or user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return user 
     
 @app.post("/register")
 def register(user: UserCreate, db: SessionLocal = Depends(get_db)):
@@ -146,3 +154,58 @@ def report(user_id: int, db: SessionLocal = Depends(get_db)):
         }
         for date, count in data
     ]
+
+@app.get("/admin/all_grievances")
+def all_grievances(admin = Depends(admin_required),db:SessionLocal = Depends(get_db)):
+    data = db.query(Grievance).order_by(Grievance.created_at.desc()).all()
+    return [
+        {
+            "id":grievance.id,
+            "user_id":grievance.user_id,
+            "text":grievance.text,
+            "category":grievance.category,
+            "status":grievance.status,
+            "priority":grievance.priority,
+            "created_at":grievance.created_at,
+        }
+        for grievance in data
+    ]
+
+@app.put("/admin/update_status/{id}")
+def update_status(id: int, status: str, admin= Depends(admin_required), db: SessionLocal = Depends(get_db)):
+    grievance = db.query(Grievance).filter(Grievance.id == id).first() 
+    
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+        
+    grievance.status = status
+    db.commit()
+    return {"message": "Status updated successfully"}
+    
+    
+@app.put("/admin/update_priority/{id}")
+def update_priority(id: int, priority: str, admin = Depends(admin_required), db: SessionLocal = Depends(get_db)):
+    grievance = db.query(Grievance).filter(Grievance.id == id).first() 
+    
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+        
+    grievance.priority = priority
+    db.commit()
+    return {"message": "Priority updated successfully"}
+
+@app.put("/admin/update_department/{id}")
+def update_department(id: int, department: str, admin = Depends(admin_required), db: SessionLocal = Depends(get_db)):
+    grievance = db.query(Grievance).filter(Grievance.id == id).first() 
+    
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+        
+    grievance.department = department
+    db.commit()
+    return {"message": "Department updated successfully"}
+
+@app.get("/admin/filter/{status}")
+def filter_status(status:str, admin = Depends(admin_required), db:SessionLocal = Depends(get_db)):
+    data = db.query(Grievance).filter(Grievance.status == status).order_by(Grievance.created_at.desc()).all()
+    return data
